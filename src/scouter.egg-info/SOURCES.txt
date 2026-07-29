@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/scouter/__init__.py
+src/scouter.egg-info/PKG-INFO
+src/scouter.egg-info/SOURCES.txt
+src/scouter.egg-info/dependency_links.txt
+src/scouter.egg-info/requires.txt
+src/scouter.egg-info/top_level.txt

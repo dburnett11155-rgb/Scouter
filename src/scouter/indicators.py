@@ -71,3 +71,36 @@ def pivot_lows(low: pd.Series, k: int = 3) -> list[int]:
         if vals[i] == window.min() and (window > vals[i]).sum() >= k:
             out.append(i)
     return out
+
+
+def cmf_bullish_divergence(df: pd.DataFrame, cmf_series: pd.Series,
+                           lookback: int = 60, k: int = 3,
+                           price_tol: float = 0.02,
+                           cmf_min_delta: float = 0.02) -> dict:
+    """Price makes a flat-or-lower low while CMF makes a higher low.
+
+    Compares the two most recent confirmed swing lows inside `lookback`.
+    Returns the comparison rather than a bare bool so the dashboard can show
+    why something fired.
+    """
+    empty = {"divergence": False, "price_low_1": None, "price_low_2": None,
+             "cmf_low_1": None, "cmf_low_2": None}
+    window = df.iloc[-lookback:]
+    if len(window) < 2 * k + 5:
+        return empty
+    cmf_window = cmf_series.iloc[-len(window):]
+
+    pivots = pivot_lows(window["low"], k=k)
+    if len(pivots) < 2:
+        return empty
+
+    i1, i2 = pivots[-2], pivots[-1]
+    p1, p2 = float(window["low"].iloc[i1]), float(window["low"].iloc[i2])
+    c1, c2 = float(cmf_window.iloc[i1]), float(cmf_window.iloc[i2])
+    if not np.isfinite([p1, p2, c1, c2]).all() or p1 <= 0:
+        return empty
+
+    return {"divergence": bool(p2 <= p1 * (1.0 + price_tol)
+                               and (c2 - c1) >= cmf_min_delta),
+            "price_low_1": p1, "price_low_2": p2,
+            "cmf_low_1": c1, "cmf_low_2": c2}
